@@ -1,0 +1,12 @@
+* external-media-player
+A simple BASH script that plays media on the World Wide Web in an
+external media player (mpv by default). It also supports time fragment
+specifiers that websites like YouTube use.
+** Requirements
+- GNU coreutils
+- [[https://rg3.github.io/youtube-dl/][youtube-dl]]
+- [[http://mpv.io/][mpv]]
+** Usage
+#+BEGIN_SRC bash
+external_media_player [url]
+#+END_SRC
