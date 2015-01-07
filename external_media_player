@@ -1,0 +1,58 @@
+#!/bin/sh
+# Copyright 2013,2014 Joren Van Onder
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# YouTube specifies starting time with media fragment specifiers.
+# It can do so in three different ways:
+#	- [x]m[x]s
+#	- [x]s
+#	- [x] (seconds)
+
+# mpv supports starting a video at a specified time with --start
+# It supports two time formats:
+# 	- [x] (seconds)
+# 	- [x]m:[x]s
+
+set -e
+
+TIMESTAMP=$(echo "$1" | grep -o '\(#\|&\|?\)t=.*$' | sed -e 's/\(#\|&\|?\)t=//')
+MPV_START="0"
+
+if [ "$TIMESTAMP" ]; then
+    if [ $(echo "$TIMESTAMP" | grep '[[:digit:]]\+m[[:digit:]]\+s$') ]; then
+	echo 'm and s'
+	MPV_START=$(echo "$TIMESTAMP" | sed -e 's/\([[:digit:]]\+\)m\([[:digit:]]\+\)s/\1:\2/')
+	echo "$MPV_START"
+    elif [ $(echo "$TIMESTAMP" | grep '[[:digit:]]s$') ]; then
+	echo 'ends with s'
+	MPV_START=$(echo "$TIMESTAMP" | sed -e 's/\([[:digit:]]\+\)s/\1/')
+	echo "$MPV_START"
+    elif [ $(echo "$TIMESTAMP" | grep '[[:digit:]]\+$') ]; then
+	echo 'just digits'
+	MPV_START="$TIMESTAMP"
+	echo "$MPV_START"
+    else
+	echo "Didn't understand $TIMESTAMP in $1"
+	exit 1
+    fi
+fi
+
+# youtube-dl output format: title \n url
+YT_DL_OUT=$(youtube-dl --no-playlist -g -e "$1")
+
+TITLE=$(echo "$YT_DL_OUT" | head -n 1)
+URL=$(echo "$YT_DL_OUT" | tail -n 1)
+
+mpv --start "$MPV_START" --media-title "$TITLE" "$URL"
